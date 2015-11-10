@@ -8,7 +8,7 @@ DBUS is used to handle wpa_supplicant and also to provide a small API to handle 
 
 ----
 
-Contents: Python sources.
+##Contents: Python sources.
 
 The main.py launches both a DBUS service and a small Simple Message Protocol server.
 
@@ -19,13 +19,14 @@ When a valid WiFi Configuration message is received, a new WiFi network configur
 via wpa_supplicant.
 
 DBUS API:  ('com.mytechia.wificonfig')
-    * [method] disconnect()
-    * [method] reconnect()
-    * [signal] signal_state_change(msg_info)
+
+* [method] disconnect()
+* [method] reconnect()
+* [signal] signal_state_change(msg_info)
 
 ----
 
-Contents: Config files.
+##Contents: Config files.
 
 This package contains all the needed files for a modern Linux distribution. It assumes systemd.
 
