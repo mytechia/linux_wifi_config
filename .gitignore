@@ -1,3 +1,5 @@
 .DS_Store
 misc.xml
 workspace.xml
+dist
+wifi_control.egg-info
