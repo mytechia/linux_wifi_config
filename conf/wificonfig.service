@@ -1,0 +1,13 @@
+[Unit]
+Description=Controls a WiFi network connection
+Requires=wpa_supplicant.service
+After=wpa_supplicant.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/wifi_control.sh
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
