@@ -89,4 +89,7 @@ setup(
                 ('/usr/share/dbus-1/system-services', ['conf/com.mytechia.wificonfig.service']),
                 ('/usr/bin', ['conf/wifi_control.sh'])],
 
+    # Unit tests
+    test_suite='nose2.collector.collector',
+
 )

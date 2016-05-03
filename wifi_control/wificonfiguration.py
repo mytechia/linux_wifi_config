@@ -61,6 +61,9 @@ class WiFiConfiguration:
     def get_running_config(self):
         return self.get_config(self.data[RUNNING])
 
+    def get_bootstrap_config(self):
+        return self.get_config(BOOTSTRAP)
+
     def set_current_config(self, config):
         self.update_config(CURRENT, config)
         self.data[RUNNING] = CURRENT

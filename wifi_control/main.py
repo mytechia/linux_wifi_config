@@ -39,18 +39,14 @@ import fcntl
 import struct
 import time
 
-from dbus.mainloop.glib import DBusGMainLoop
-
-if __name__ == '__main__':
-    DBusGMainLoop(set_as_default=True)
-    print "Default main loop set"
-
 import wifiwpadbus, simplemessageprotocol, wificonfiguration
 
 __author__ = 'victor'
 
 
 FILE_NAME = "/tmp/wifi_data.p"   # name for the file used to persist configuration data
+
+NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES = 15
 
 
 def process_configuration(wifi_configuration):
@@ -73,9 +69,25 @@ def process_configuration(wifi_configuration):
         wificonfiguration.save_wifi_configuration_to(FILE_NAME, wifi_configurations)
 
 
-def connect():
+def connect_to_bootstrap():
     """
-    Connects to the previously set network configuration.
+    Connects to the bootstrap network configuration.
+    Assumption: the network configurations data has already been persisted.
+    :return: nothing.
+    """
+    wifi_configuration = wificonfiguration.load_wifi_configuration_from(FILE_NAME)
+    bootstrap_configuration = wifi_configuration.get_bootstrap_config()
+    new_network_object_path = \
+        wifiwpadbus.add_new_network(
+            wifiwpadbus.create_new_network_properties_map(
+                bootstrap_configuration[wificonfiguration.SSID],
+                bootstrap_configuration[wificonfiguration.PSK]))
+    wifiwpadbus.connect_to_network(new_network_object_path)
+
+
+def connect_to_current():
+    """
+    Connects to the previously set current network configuration.
     Assumption: the network configurations data has already been persisted.
     :return: nothing.
     """
@@ -103,17 +115,40 @@ def get_ip_address(ifname):
     )[20:24])
 
 
-if __name__ == '__main__':
+def wait_for_connection(number_of_tries):
+    connection_try_number = 0
+    while "completed" != wifiwpadbus.get_managed_network_property('State') and connection_try_number < number_of_tries:
+        print "Waiting to complete connection..."
+        connection_try_number += 1
+        time.sleep(1)
+    if connection_try_number < number_of_tries:
+        return True
+    else:
+        return False
+
+
+def main():
     wificonfiguration.check_wifi_configurations_file(FILE_NAME)
     print "Configurations checked"
     wifiwpadbus.clean_configured_networks()
-    print "Rebooting current network configurations"
-    connect()
+    print "Trying bootstrap network configuration"
+    connect_to_bootstrap()
     print "Network interface has been configured"
-    while "completed" != wifiwpadbus.get_managed_network_property('State'):
-        print "Waiting to complete connection..."
-        time.sleep(1)
-    print "Connection completed"
+
+    connected = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
+    if connected:
+        print "Connection to bootstrap completed"
+    else:
+        print "Trying last running network configuration"
+        connect_to_current()
+        connected = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
+        if not connected:
+            print "Network interface has NOT been configured"
+            return
+        else:
+            print "Connection to last current completed"
+
+    time.sleep(1)
     service = wifiwpadbus.WiFiConfigurationDBUSService()
     print "WiFiConfigurationDBUSService initialized"
     ip = get_ip_address(wifiwpadbus.get_managed_network_property('Ifname').__str__())
