@@ -5,11 +5,11 @@
 """
 Launcher for the WiFiConfig component. Based on wpa_supplicant service, and DBUS.
 The main loop handles:
-    * checking existing database (handler in a single binary file) for network configurations data.
+    * checking existing database (data stored in a single binary file) for network configurations data.
     * cleaning the network configurations previously handled by wpa_supplicant.
     * connects to a network whose configuration is provided by the network configurations data.
     * launches a DBUS service that offers simple access to the current running network configuration.
-    * launches a worker thread that listens via UDP for Luminare Configuration messages
+    * launches a worker thread that listens via UDP for Luminare Configuration messages.
 """
 
 
@@ -44,7 +44,7 @@ import wifiwpadbus, simplemessageprotocol, wificonfiguration
 __author__ = 'victor'
 
 
-FILE_NAME = "/tmp/wifi_data.p"   # name for the file used to persist configuration data
+FILE_NAME = "/home/root/temp/wifi_data.p"   # name for the file used to persist configuration data
 
 NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES = 15
 
@@ -56,17 +56,18 @@ def process_configuration(wifi_configuration):
     :param wifi_configuration:
     :return:
     """
-    print "Processing new network configuration: " + str(wifi_configuration)
     wifi_configurations = wificonfiguration.load_wifi_configuration_from(FILE_NAME)
     if wifi_configuration[wificonfiguration.SSID] != (wifi_configurations.get_running_config())[wificonfiguration.SSID]:
         wifi_configurations.set_current_config(wifi_configuration)
-        new_network_object_path = \
+        wificonfiguration.save_wifi_configuration_to(FILE_NAME, wifi_configurations)
+    print "Processing network configuration: " + str(wifi_configuration)
+    new_network_object_path = \
             wifiwpadbus.add_new_network(
                 wifiwpadbus.create_new_network_properties_map(
                     wifi_configuration[wificonfiguration.SSID],
                     wifi_configuration[wificonfiguration.PSK]))
-        wifiwpadbus.connect_to_network(new_network_object_path)
-        wificonfiguration.save_wifi_configuration_to(FILE_NAME, wifi_configurations)
+    wifiwpadbus.connect_to_network(new_network_object_path)
+
 
 
 def connect_to_bootstrap():
@@ -148,7 +149,7 @@ def main():
         else:
             print "Connection to last current completed"
 
-    time.sleep(1)
+    time.sleep(5)
     service = wifiwpadbus.WiFiConfigurationDBUSService()
     print "WiFiConfigurationDBUSService initialized"
     ip = get_ip_address(wifiwpadbus.get_managed_network_property('Ifname').__str__())
