@@ -151,7 +151,7 @@ def main():
 
     time.sleep(5)
     service = wifiwpadbus.WiFiConfigurationDBUSService()
-    print "WiFiConfigurationDBUSService initialized"
+    print "WiFiConfigurationDBUSService initialized for: " + wifiwpadbus.get_managed_network_property('Ifname').__str__()
     ip = get_ip_address(wifiwpadbus.get_managed_network_property('Ifname').__str__())
     configurator_listener = simplemessageprotocol.WifiConfigurationMessageListener(ip, process_configuration)
     print "Launching listener for ip: " + ip
