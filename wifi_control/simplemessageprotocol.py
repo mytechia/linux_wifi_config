@@ -29,7 +29,7 @@ import socket
 import time
 import threading
 
-import wificonfiguration
+import wificonfiguration, wificonfiglogger
 
 __author__ = 'victor'
 
@@ -47,7 +47,7 @@ def process_unidentified_message(something):
     :param something: chunk of data to process.
     :return: an OK String.
     """
-    print something
+    wificonfiglogger.get_logger().info(something)
     return OK
 
 
@@ -93,10 +93,11 @@ class WifiConfigurationMessageListener(threading.Thread):
     A callback function is used to send the processed data that comes as output of the handler function.
     """
 
-    def __init__(self, ip, callback):
+    def __init__(self, ip, callback_to_process_configuration, data_file_name):
         threading.Thread.__init__(self)
         self.ip = ip
-        self.callback = callback
+        self.callback_to_process_configuration = callback_to_process_configuration
+        self.data_file_name = data_file_name
         self.stopped = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -108,15 +109,15 @@ class WifiConfigurationMessageListener(threading.Thread):
         self.sock.bind(('', LUMINARE_PROTOCOL_UDP_PORT))
         while not self.stopped:
             data = self.sock.recvfrom(512)
-            print "Received raw message:", data
+            wificonfiglogger.get_logger().info("Received raw message:" + str(data))
             if message_is_smp(data[0]):
                 self._process_message(data[0])
             time.sleep(1)
 
     def _process_message(self, msg_data):
-        print "Processing SMP message"
-        process_func = \
+        wificonfiglogger.get_logger().info("Processing SMP message")
+        selected_process_func = \
             LUMINARE_PROTOCOL_MSG_TYPE_SWITCHER.get(ord(msg_data[1]), process_unidentified_message)
-        self.callback(process_func(msg_data))
+        self.callback_to_process_configuration(selected_process_func(msg_data), self.data_file_name)
 
 

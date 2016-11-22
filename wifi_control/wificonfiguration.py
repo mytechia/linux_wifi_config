@@ -75,7 +75,9 @@ def load_wifi_configuration_from(path):
     :param path: full path for the file that contains the persisted data.
     :return: a WiFiConfiguration instance.
     """
-    config_map = pickle.load(open(path, "rb"))
+    f = open(path, "rb")
+    config_map = pickle.load(f)
+    f.close()
     return WiFiConfiguration(config_map)
 
 
@@ -86,7 +88,9 @@ def save_wifi_configuration_to(path, wifi_configuration):
     :param wifi_configuration: a WiFiConfiguration instance with the configuration data.
     :return: nothing of consequence.
     """
-    pickle.dump(wifi_configuration.data, open(path, "wb"))
+    f = open(path, "wb")
+    pickle.dump(wifi_configuration.data, f)
+    f.close()
 
 
 def build_dumb_wifi_configurations():
@@ -109,4 +113,8 @@ def check_wifi_configurations_file(path):
     :return: nothing.
     """
     if not os.path.exists(path):
+        save_wifi_configuration_to(path, WiFiConfiguration(build_dumb_wifi_configurations()))
+    try:
+        load_wifi_configuration_from(path)
+    except:
         save_wifi_configuration_to(path, WiFiConfiguration(build_dumb_wifi_configurations()))

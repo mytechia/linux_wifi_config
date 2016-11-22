@@ -38,29 +38,27 @@ import socket
 import fcntl
 import struct
 import time
-
-import wifiwpadbus, simplemessageprotocol, wificonfiguration
+import sys
+import wifiwpadbus, simplemessageprotocol, wificonfiguration, wificonfiglogger
 
 __author__ = 'victor'
 
 
-FILE_NAME = "/home/root/temp/wifi_data.p"   # name for the file used to persist configuration data
-
 NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES = 15
 
 
-def process_configuration(wifi_configuration):
+def process_configuration(wifi_configuration, data_file_name):
     """
     Connects to the provided network configuration.
     And stores that network configuration in the network configuration data handled.
     :param wifi_configuration:
     :return:
     """
-    wifi_configurations = wificonfiguration.load_wifi_configuration_from(FILE_NAME)
+    wificonfiglogger.get_logger().info("Processing network configuration: " + str(wifi_configuration))
+    wifi_configurations = wificonfiguration.load_wifi_configuration_from(data_file_name)
     if wifi_configuration[wificonfiguration.SSID] != (wifi_configurations.get_running_config())[wificonfiguration.SSID]:
         wifi_configurations.set_current_config(wifi_configuration)
-        wificonfiguration.save_wifi_configuration_to(FILE_NAME, wifi_configurations)
-    print "Processing network configuration: " + str(wifi_configuration)
+        wificonfiguration.save_wifi_configuration_to(data_file_name, wifi_configurations)
     new_network_object_path = \
             wifiwpadbus.add_new_network(
                 wifiwpadbus.create_new_network_properties_map(
@@ -69,15 +67,15 @@ def process_configuration(wifi_configuration):
     wifiwpadbus.connect_to_network(new_network_object_path)
 
 
-
-def connect_to_bootstrap():
+def connect_to_bootstrap(data_file_name):
     """
     Connects to the bootstrap network configuration.
     Assumption: the network configurations data has already been persisted.
     :return: nothing.
     """
-    wifi_configuration = wificonfiguration.load_wifi_configuration_from(FILE_NAME)
+    wifi_configuration = wificonfiguration.load_wifi_configuration_from(data_file_name)
     bootstrap_configuration = wifi_configuration.get_bootstrap_config()
+    wificonfiglogger.get_logger().info("Trying to connect to: " + bootstrap_configuration[wificonfiguration.SSID])
     new_network_object_path = \
         wifiwpadbus.add_new_network(
             wifiwpadbus.create_new_network_properties_map(
@@ -86,14 +84,15 @@ def connect_to_bootstrap():
     wifiwpadbus.connect_to_network(new_network_object_path)
 
 
-def connect_to_current():
+def connect_to_current(data_file_name):
     """
     Connects to the previously set current network configuration.
     Assumption: the network configurations data has already been persisted.
     :return: nothing.
     """
-    wifi_configuration = wificonfiguration.load_wifi_configuration_from(FILE_NAME)
+    wifi_configuration = wificonfiguration.load_wifi_configuration_from(data_file_name)
     running_configuration = wifi_configuration.get_running_config()
+    wificonfiglogger.get_logger().info("Trying to connect to: " + running_configuration[wificonfiguration.SSID])
     new_network_object_path = \
         wifiwpadbus.add_new_network(
             wifiwpadbus.create_new_network_properties_map(
@@ -119,7 +118,6 @@ def get_ip_address(ifname):
 def wait_for_connection(number_of_tries):
     connection_try_number = 0
     while "completed" != wifiwpadbus.get_managed_network_property('State') and connection_try_number < number_of_tries:
-        print "Waiting to complete connection..."
         connection_try_number += 1
         time.sleep(1)
     if connection_try_number < number_of_tries:
@@ -129,30 +127,34 @@ def wait_for_connection(number_of_tries):
 
 
 def main():
-    wificonfiguration.check_wifi_configurations_file(FILE_NAME)
-    print "Configurations checked"
+    if len(sys.argv) != 3:
+        print 'This module needs 2 arguments: DATA_FILE_NAME, LOG_FILE_NAME'
+    data_file_name = sys.argv[1]
+    log_file_name = sys.argv[2]
+    logger = wificonfiglogger.initialize_logger(log_file_name)
+    wificonfiguration.check_wifi_configurations_file(data_file_name)
+    logger.info("Configurations checked")
     wifiwpadbus.clean_configured_networks()
-    print "Trying bootstrap network configuration"
-    connect_to_bootstrap()
-    print "Network interface has been configured"
+    logger.info("Trying bootstrap network configuration")
+    connect_to_bootstrap(data_file_name)
 
     connected = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
     if connected:
-        print "Connection to bootstrap completed"
+        logger.info("Connection to bootstrap completed")
     else:
-        print "Trying last running network configuration"
-        connect_to_current()
+        logger.info("Trying last running network configuration")
+        connect_to_current(data_file_name)
         connected = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
         if not connected:
-            print "Network interface has NOT been configured"
+            logger.info("Network interface has NOT been configured")
             return
         else:
-            print "Connection to last current completed"
+            logger.info("Connection to last current completed")
 
     time.sleep(5)
     service = wifiwpadbus.WiFiConfigurationDBUSService()
-    print "WiFiConfigurationDBUSService initialized for: " + wifiwpadbus.get_managed_network_property('Ifname').__str__()
+    logger.info("WiFiConfigurationDBUSService initialized for: " + wifiwpadbus.get_managed_network_property('Ifname').__str__())
     ip = get_ip_address(wifiwpadbus.get_managed_network_property('Ifname').__str__())
-    configurator_listener = simplemessageprotocol.WifiConfigurationMessageListener(ip, process_configuration)
-    print "Launching listener for ip: " + ip
+    configurator_listener = simplemessageprotocol.WifiConfigurationMessageListener(ip, process_configuration, data_file_name)
+    logger.info("Launching listener for ip: " + ip)
     configurator_listener.start()

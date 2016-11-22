@@ -1,5 +1,5 @@
 [D-BUS Service]
 Name=com.mytechia.wificonfig
-Exec=/usr/bin/wifi_control.sh
+Exec=/usr/bin/wificonfig.sh
 User=root
 SystemdService=wificonfig.service

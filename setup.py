@@ -15,12 +15,12 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='wifi_control',
+    name='wificontrol',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.5.0',
+    version='0.5.1',
 
     description='A tool that handles configurations for a network connection via wpa_supplicant',
     long_description=long_description,
@@ -87,7 +87,7 @@ setup(
     data_files=[('/etc/dbus-1/system.d', ['conf/com.mytechia.wificonfig.conf']),
                 ('/lib/systemd/system/', ['conf/wificonfig.service']),
                 ('/usr/share/dbus-1/system-services', ['conf/com.mytechia.wificonfig.service']),
-                ('/usr/bin', ['conf/wifi_control.sh'])],
+                ('/usr/bin', ['conf/wificonfig.sh'])],
 
     # Unit tests
     test_suite='nose2.collector.collector',

@@ -30,7 +30,7 @@ DBUS API:  ('com.mytechia.wificonfig')
 
 This package contains all the needed files for a modern Linux distribution. It assumes systemd.
 
-The main.py is wrapped in a small script: wrapped in a small script: wifi_control.
+The main.py is wrapped in a small script: wrapped in a small script: wificonfig.
 
 A .service file is needed in order to launch this script: wificonfig.service.
 
