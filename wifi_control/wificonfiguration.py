@@ -100,7 +100,7 @@ def build_dumb_wifi_configurations():
     :return: a map with the three network configurations, running configuration set to bootstrap.
     """
     return {BOOTSTRAP: {PSK: "IAmSecured", SSID: "Luminare360HotSpot"},
-            CURRENT: {PSK: "IAmSecured", SSID: "Luminare360HotSpot"},
+            CURRENT: {PSK: "IAmSecured", SSID: "Luminare360HotSpotWhat"},
             DEFAULT: {PSK: "IAmSecured", SSID: "Luminare360HotSpot"},
             RUNNING: BOOTSTRAP}
 

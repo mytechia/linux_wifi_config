@@ -136,21 +136,18 @@ def main():
     logger.info("Configurations checked")
     wifiwpadbus.clean_configured_networks()
     logger.info("Trying bootstrap network configuration")
-    connect_to_bootstrap(data_file_name)
+    connect_to_current(data_file_name)
 
     connected = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
     if connected:
-        logger.info("Connection to bootstrap completed")
+        logger.info("Connection to last current completed")
     else:
-        logger.info("Trying last running network configuration")
-        connect_to_current(data_file_name)
-        connected = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
-        if not connected:
-            logger.info("Network interface has NOT been configured")
-            return
-        else:
-            logger.info("Connection to last current completed")
+        while not connected:
+            logger.info("Trying bootstrap network configuration")
+            connect_to_current(data_file_name)
+            connected = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
 
+    logger.info("Connection to bootstrap completed")
     time.sleep(5)
     service = wifiwpadbus.WiFiConfigurationDBUSService()
     logger.info("WiFiConfigurationDBUSService initialized for: " + wifiwpadbus.get_managed_network_property('Ifname').__str__())

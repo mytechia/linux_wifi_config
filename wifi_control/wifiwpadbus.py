@@ -30,6 +30,7 @@ Also contains WiFiConfigurationDBUSService, a DBUS service that handles:
 
 import dbus
 import dbus.service
+import wificonfiglogger
 
 
 __author__ = 'victor'
@@ -208,4 +209,4 @@ class WiFiConfigurationDBUSService(dbus.service.Object):
         :param message:
         :return:
         """
-        print "Signal sent: " + message
+        wificonfiglogger.get_logger().info("Signal sent: " + message)
