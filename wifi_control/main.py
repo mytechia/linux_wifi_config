@@ -135,23 +135,28 @@ def main():
     wificonfiguration.check_wifi_configurations_file(data_file_name)
     logger.info("Configurations checked")
     wifiwpadbus.clean_configured_networks()
-    logger.info("Trying bootstrap network configuration")
-    connect_to_current(data_file_name)
 
-    connected = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
-    if connected:
-        logger.info("Connection to last current completed")
-    else:
-        while not connected:
-            logger.info("Trying bootstrap network configuration")
+    connected_to_current = False
+    connected_to_bootstrap = False
+
+    while not connected_to_bootstrap and not connected_to_current:
+        logger.info("Trying bootstrap network configuration")
+        connect_to_bootstrap(data_file_name)
+        connected_to_bootstrap = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
+        if not connected_to_bootstrap:
+            logger.info("Trying current network configuration")
             connect_to_current(data_file_name)
-            connected = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
+            connected_to_current = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
 
-    logger.info("Connection to bootstrap completed")
-    time.sleep(5)
-    service = wifiwpadbus.WiFiConfigurationDBUSService()
-    logger.info("WiFiConfigurationDBUSService initialized for: " + wifiwpadbus.get_managed_network_property('Ifname').__str__())
-    ip = get_ip_address(wifiwpadbus.get_managed_network_property('Ifname').__str__())
-    configurator_listener = simplemessageprotocol.WifiConfigurationMessageListener(ip, process_configuration, data_file_name)
-    logger.info("Launching listener for ip: " + ip)
-    configurator_listener.start()
+    if connected_to_bootstrap:
+        logger.info("Connection to bootstrap completed")
+        time.sleep(5)
+        service = wifiwpadbus.WiFiConfigurationDBUSService()
+        logger.info("WiFiConfigurationDBUSService initialized for: " + wifiwpadbus.get_managed_network_property('Ifname').__str__())
+        ip = get_ip_address(wifiwpadbus.get_managed_network_property('Ifname').__str__())
+        configurator_listener = simplemessageprotocol.WifiConfigurationMessageListener(ip, process_configuration, data_file_name)
+        logger.info("Launching listener for ip: " + ip)
+        configurator_listener.start()
+
+    if connected_to_current:
+        logger.info("Connection to current completed")
