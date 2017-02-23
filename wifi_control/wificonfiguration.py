@@ -102,7 +102,7 @@ def build_dumb_wifi_configurations():
     return {BOOTSTRAP: {PSK: "IAmSecured", SSID: "Luminare360HotSpot"},
             CURRENT: {PSK: "IAmSecured", SSID: "Luminare360HotSpotWhat"},
             DEFAULT: {PSK: "IAmSecured", SSID: "Luminare360HotSpot"},
-            RUNNING: BOOTSTRAP}
+            RUNNING: CURRENT}
 
 
 def check_wifi_configurations_file(path):

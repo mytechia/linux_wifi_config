@@ -102,7 +102,6 @@ class WifiConfigurationMessageListener(threading.Thread):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def stop(self):
-        self.sock.shutdown
         self.stopped = True
 
     def run(self):
@@ -113,6 +112,8 @@ class WifiConfigurationMessageListener(threading.Thread):
             if message_is_smp(data[0]):
                 self._process_message(data[0])
             time.sleep(1)
+        self.sock.shutdown
+        self.sock.close
 
     def _process_message(self, msg_data):
         wificonfiglogger.get_logger().info("Processing SMP message")

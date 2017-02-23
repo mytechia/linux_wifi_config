@@ -59,12 +59,6 @@ def process_configuration(wifi_configuration, data_file_name):
     if wifi_configuration[wificonfiguration.SSID] != (wifi_configurations.get_running_config())[wificonfiguration.SSID]:
         wifi_configurations.set_current_config(wifi_configuration)
         wificonfiguration.save_wifi_configuration_to(data_file_name, wifi_configurations)
-    new_network_object_path = \
-            wifiwpadbus.add_new_network(
-                wifiwpadbus.create_new_network_properties_map(
-                    wifi_configuration[wificonfiguration.SSID],
-                    wifi_configuration[wificonfiguration.PSK]))
-    wifiwpadbus.connect_to_network(new_network_object_path)
 
 
 def connect_to_bootstrap(data_file_name):
@@ -137,26 +131,33 @@ def main():
     wifiwpadbus.clean_configured_networks()
 
     connected_to_current = False
-    connected_to_bootstrap = False
+    service = wifiwpadbus.WiFiConfigurationDBUSService()
 
-    while not connected_to_bootstrap and not connected_to_current:
+    while not connected_to_current:
         logger.info("Trying bootstrap network configuration")
         connect_to_bootstrap(data_file_name)
         connected_to_bootstrap = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
-        if not connected_to_bootstrap:
-            logger.info("Trying current network configuration")
+        if connected_to_bootstrap:
+            logger.info("Connection to bootstrap completed")
+            time.sleep(5)
+            logger.info(
+                "WiFiConfigurationDBUSService initialized for: "
+                + wifiwpadbus.get_managed_network_property('Ifname').__str__())
+            ip = get_ip_address(wifiwpadbus.get_managed_network_property('Ifname').__str__())
+            configurator_listener = \
+                simplemessageprotocol.WifiConfigurationMessageListener(ip, process_configuration, data_file_name)
+            logger.info("Launching listener for ip: " + ip)
+            configurator_listener.start()
+            logger.info("Waiting... ")
+            time.sleep(10)
+            configurator_listener.stop()
+            logger.info("Ending bootstrap, trying current network configuration")
             connect_to_current(data_file_name)
             connected_to_current = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
-
-    if connected_to_bootstrap:
-        logger.info("Connection to bootstrap completed")
-        time.sleep(5)
-        service = wifiwpadbus.WiFiConfigurationDBUSService()
-        logger.info("WiFiConfigurationDBUSService initialized for: " + wifiwpadbus.get_managed_network_property('Ifname').__str__())
-        ip = get_ip_address(wifiwpadbus.get_managed_network_property('Ifname').__str__())
-        configurator_listener = simplemessageprotocol.WifiConfigurationMessageListener(ip, process_configuration, data_file_name)
-        logger.info("Launching listener for ip: " + ip)
-        configurator_listener.start()
+        else:
+            logger.info("Cannot connect to bootstrap, trying current network configuration")
+            connect_to_current(data_file_name)
+            connected_to_current = wait_for_connection(NUMBER_OF_BOOTSTRAP_CONNECTION_TRIES)
 
     if connected_to_current:
         logger.info("Connection to current completed")
